@@ -7,6 +7,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('docs', 'pages::app.docs')->name('docs');
 
     Route::prefix('content-management')->name('content-management.')->group(function () {
+        Route::livewire('pages', 'pages::app.content-management.pages')->name('pages');
         Route::livewire('blogs', 'pages::app.content-management.blogs')->name('blogs');
     });
 
