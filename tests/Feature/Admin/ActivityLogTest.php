@@ -26,12 +26,13 @@ test('creating a user logs activity with the acting admin as causer', function (
     $this->actingAs($admin);
 
     Livewire::test('pages::app.admin.users')
+        ->call('create')
         ->set('name', 'Jane Doe')
         ->set('email', 'jane@example.com')
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
         ->set('role', 'editor')
-        ->call('createUser')
+        ->call('save')
         ->assertHasNoErrors();
 
     $activity = Activity::query()->latest()->first();
@@ -50,8 +51,8 @@ test('changing a role logs activity', function () {
 
     Livewire::test('pages::app.admin.users')
         ->call('edit', $member->id)
-        ->set('editingRole', 'admin')
-        ->call('updateRole');
+        ->set('role', 'admin')
+        ->call('save');
 
     $activity = Activity::query()->latest()->first();
 

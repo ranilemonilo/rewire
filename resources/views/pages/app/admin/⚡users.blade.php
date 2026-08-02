@@ -17,6 +17,8 @@ new #[Title('Users')] class extends Component
 
     public string $search = '';
 
+    public ?User $editingUser = null;
+
     public string $name = '';
 
     public string $email = '';
@@ -27,75 +29,112 @@ new #[Title('Users')] class extends Component
 
     public string $role = 'member';
 
-    public ?int $editingUserId = null;
-
-    public string $editingRole = 'member';
-
     public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    public function createUser(): void
+    public function create(): void
     {
-        $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => $this->passwordRules(),
-            'role' => ['required', 'string', Rule::in(Role::query()->pluck('name'))],
-        ]);
+        $this->resetForm();
 
-        $user = User::create([
-            'name' => $this->name,
-            'email' => $this->email,
-            'password' => $this->password,
-        ]);
-
-        $user->forceFill(['email_verified_at' => now()])->save();
-
-        $user->syncRoles([$this->role]);
-
-        activity('users')->performedOn($user)->withProperties(['role' => $this->role])->log("{$user->name} was created with the {$this->role} role");
-
-        Flux::toast(variant: 'success', text: "{$user->name} was created.");
-
-        $this->reset('name', 'email', 'password', 'password_confirmation');
-        $this->role = 'member';
-
-        Flux::modal('create-user')->close();
+        Flux::modal('user-form')->show();
     }
 
     public function edit(int $userId): void
     {
         $user = User::query()->with('roles')->findOrFail($userId);
 
-        $this->editingUserId = $user->id;
-        $this->editingRole = $user->roles->first()?->name ?? 'member';
+        $this->editingUser = $user;
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->password = '';
+        $this->password_confirmation = '';
+        $this->role = $user->roles->first()?->name ?? 'member';
 
-        Flux::modal('edit-user')->show();
+        Flux::modal('user-form')->show();
     }
 
-    public function updateRole(): void
+    public function save(): void
     {
-        $this->validate([
-            'editingRole' => ['required', 'string', Rule::in(Role::query()->pluck('name'))],
-        ]);
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->editingUser?->id)],
+            'role' => ['required', 'string', Rule::in(Role::query()->pluck('name'))],
+        ];
 
-        $user = User::query()->findOrFail($this->editingUserId);
+        // On create, a password is mandatory. While editing, the field is optional --
+        // leaving it blank means "don't change it" and skips its rules entirely, rather
+        // than being validated as an empty password.
+        if ($this->editingUser === null || $this->password !== '') {
+            $rules['password'] = $this->passwordRules();
+        }
 
-        if ($user->is(Auth::user()) && $this->editingRole !== 'admin') {
+        $this->validate($rules);
+
+        // Guard first, before any writes -- an admin editing their own account must never
+        // end up with the role change half-applied while the profile change went through.
+        if ($this->editingUser?->is(Auth::user()) && $this->role !== 'admin') {
             Flux::toast(variant: 'danger', text: 'You cannot remove your own admin role.');
 
             return;
         }
 
-        $user->syncRoles([$this->editingRole]);
+        if ($this->editingUser === null) {
+            $user = User::create([
+                'name' => $this->name,
+                'email' => $this->email,
+                'password' => $this->password,
+            ]);
 
-        activity('users')->performedOn($user)->withProperties(['role' => $this->editingRole])->log("{$user->name}'s role was changed to {$this->editingRole}");
+            $user->forceFill(['email_verified_at' => now()])->save();
+            $user->syncRoles([$this->role]);
 
-        Flux::toast(variant: 'success', text: "{$user->name}'s role was updated.");
+            activity('users')->performedOn($user)->withProperties(['role' => $this->role])->log("{$user->name} was created with the {$this->role} role");
 
-        Flux::modal('edit-user')->close();
+            Flux::toast(variant: 'success', text: "{$user->name} was created.");
+        } else {
+            $roleChanged = $this->editingUser->roles->pluck('name')->first() !== $this->role;
+            $profileChanged = $this->editingUser->name !== $this->name || $this->editingUser->email !== $this->email;
+            $passwordChanged = $this->password !== '';
+
+            $data = [
+                'name' => $this->name,
+                'email' => $this->email,
+            ];
+
+            if ($passwordChanged) {
+                $data['password'] = $this->password;
+            }
+
+            $this->editingUser->update($data);
+            $this->editingUser->syncRoles([$this->role]);
+
+            if ($profileChanged) {
+                activity('users')->performedOn($this->editingUser)->log("{$this->editingUser->name}'s profile was updated");
+            }
+
+            if ($passwordChanged) {
+                activity('users')->performedOn($this->editingUser)->log("{$this->editingUser->name}'s password was reset");
+            }
+
+            if ($roleChanged) {
+                activity('users')->performedOn($this->editingUser)->withProperties(['role' => $this->role])->log("{$this->editingUser->name}'s role was changed to {$this->role}");
+            }
+
+            Flux::toast(variant: 'success', text: "{$this->editingUser->name} was updated.");
+        }
+
+        Flux::modal('user-form')->close();
+
+        $this->resetForm();
+    }
+
+    private function resetForm(): void
+    {
+        $this->editingUser = null;
+        $this->reset('name', 'email', 'password', 'password_confirmation');
+        $this->role = 'member';
     }
 
     public function delete(int $userId): void
@@ -125,12 +164,6 @@ new #[Title('Users')] class extends Component
     }
 
     #[Computed]
-    public function editingUser(): ?User
-    {
-        return $this->editingUserId ? User::query()->find($this->editingUserId) : null;
-    }
-
-    #[Computed]
     public function users()
     {
         return User::query()
@@ -150,9 +183,7 @@ new #[Title('Users')] class extends Component
             <flux:subheading>Manage member accounts and their roles.</flux:subheading>
         </div>
 
-        <flux:modal.trigger name="create-user">
-            <flux:button variant="primary" icon="plus">Create user</flux:button>
-        </flux:modal.trigger>
+        <flux:button variant="primary" icon="plus" wire:click="create">Create user</flux:button>
     </div>
 
     <flux:input wire:model.live.debounce.300ms="search" placeholder="Search by name or email" icon="magnifying-glass" class="max-w-sm" />
@@ -212,16 +243,23 @@ new #[Title('Users')] class extends Component
         </flux:table>
     </flux:card>
 
-    <flux:modal flyout name="create-user" class="max-w-md" focusable>
-        <form wire:submit="createUser" class="space-y-6">
+    <flux:modal flyout name="user-form" class="max-w-md" focusable>
+        <form wire:submit="save" class="space-y-6">
             <div>
-                <flux:heading size="lg">Create user</flux:heading>
-                <flux:subheading>Add a new account and assign it a role.</flux:subheading>
+                <flux:heading size="lg">{{ $editingUser ? 'Edit user' : 'Create user' }}</flux:heading>
+                <flux:subheading>{{ $editingUser ? "Update this account's details and role." : 'Add a new account and assign it a role.' }}</flux:subheading>
             </div>
 
             <flux:input label="Name" wire:model="name" />
             <flux:input type="email" label="Email" wire:model="email" />
-            <flux:input type="password" viewable label="Password" wire:model="password" />
+
+            <flux:input
+                type="password"
+                viewable
+                label="Password"
+                wire:model="password"
+                :description="$editingUser ? 'Leave blank to keep the current password.' : null"
+            />
             <flux:input type="password" viewable label="Confirm password" wire:model="password_confirmation" />
 
             <flux:select wire:model="role" label="Role">
@@ -235,30 +273,7 @@ new #[Title('Users')] class extends Component
                     <flux:button variant="filled">Cancel</flux:button>
                 </flux:modal.close>
 
-                <flux:button type="submit" variant="primary">Create user</flux:button>
-            </div>
-        </form>
-    </flux:modal>
-
-    <flux:modal name="edit-user" class="max-w-md" focusable>
-        <form wire:submit="updateRole" class="space-y-6">
-            <div>
-                <flux:heading size="lg">Edit {{ $this->editingUser?->name }}</flux:heading>
-                <flux:subheading>Change this account's role.</flux:subheading>
-            </div>
-
-            <flux:select wire:model="editingRole" label="Role">
-                @foreach ($this->roles as $role)
-                    <flux:select.option value="{{ $role }}">{{ ucfirst($role) }}</flux:select.option>
-                @endforeach
-            </flux:select>
-
-            <div class="flex justify-end gap-2">
-                <flux:modal.close>
-                    <flux:button variant="filled">Cancel</flux:button>
-                </flux:modal.close>
-
-                <flux:button type="submit" variant="primary">Save</flux:button>
+                <flux:button type="submit" variant="primary">{{ $editingUser ? 'Save' : 'Create user' }}</flux:button>
             </div>
         </form>
     </flux:modal>
