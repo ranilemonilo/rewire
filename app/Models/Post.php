@@ -22,6 +22,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property string $body
  * @property string|null $featured_image
  * @property bool $is_published
+ * @property Carbon|null $published_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -30,7 +31,7 @@ class Post extends Model
     /** @use HasFactory<PostFactory> */
     use HasFactory, HasSlug, LogsActivity;
 
-    protected $fillable = ['author_id', 'title', 'slug', 'excerpt', 'body', 'featured_image', 'is_published'];
+    protected $fillable = ['author_id', 'title', 'slug', 'excerpt', 'body', 'featured_image', 'is_published', 'published_at'];
 
     /**
      * @return array<string, string>
@@ -39,6 +40,7 @@ class Post extends Model
     {
         return [
             'is_published' => 'boolean',
+            'published_at' => 'datetime',
         ];
     }
 
@@ -72,12 +74,12 @@ class Post extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        // Deliberately not ->dontLogEmptyChanges(): only is_published is tracked (title/
-        // excerpt/body are excluded to keep entries readable), so most real edits touch
-        // those fields without touching is_published -- logging empty changes is what
-        // keeps those saves from being silently skipped.
+        // Deliberately not ->dontLogEmptyChanges(): title/slug/published_at/is_published are
+        // tracked (excerpt/body stay excluded to keep entries readable), but a real edit can
+        // still touch only excerpt/body -- logging empty changes is what keeps those saves
+        // from being silently skipped.
         return LogOptions::defaults()
-            ->logOnly(['is_published'])
+            ->logOnly(['title', 'slug', 'published_at', 'is_published'])
             ->logOnlyDirty()
             ->useLogName('blog')
             ->setDescriptionForEvent(fn (string $eventName) => "The post \"{$this->title}\" was {$eventName}");
