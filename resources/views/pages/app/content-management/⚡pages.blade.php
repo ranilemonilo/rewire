@@ -9,7 +9,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
-new #[Title('Halaman')] class extends Component
+new #[Title('Pages')] class extends Component
 {
     use WithFileUploads, WithPagination;
 
@@ -27,16 +27,11 @@ new #[Title('Halaman')] class extends Component
 
     public $featuredImageUpload = null;
 
+    public bool $removeFeaturedImage = false;
+
     public function updatingSearch(): void
     {
         $this->resetPage();
-    }
-
-    public function create(): void
-    {
-        $this->resetForm();
-
-        Flux::modal('page-form')->show();
     }
 
     public function edit(int $pageId): void
@@ -49,16 +44,25 @@ new #[Title('Halaman')] class extends Component
         $this->content = $page->content;
         $this->isPublished = $page->is_published;
         $this->featuredImageUpload = null;
+        $this->removeFeaturedImage = false;
 
         Flux::modal('page-form')->show();
     }
 
-    public function removeFeaturedImage(): void
+    /**
+     * Cancels a not-yet-saved upload if one is staged, otherwise marks the persisted
+     * featured image for deletion. Either way, nothing touches storage or the database
+     * until save() actually runs.
+     */
+    public function clearFeaturedImage(): void
     {
-        if ($this->editingPage?->featured_image) {
-            Storage::disk('public')->delete($this->editingPage->featured_image);
-            $this->editingPage->update(['featured_image' => null]);
+        if ($this->featuredImageUpload) {
+            $this->reset('featuredImageUpload');
+
+            return;
         }
+
+        $this->removeFeaturedImage = true;
     }
 
     public function save(): void
@@ -78,44 +82,20 @@ new #[Title('Halaman')] class extends Component
         ];
 
         if ($this->featuredImageUpload) {
-            if ($this->editingPage?->featured_image) {
+            if ($this->editingPage->featured_image) {
                 Storage::disk('public')->delete($this->editingPage->featured_image);
             }
 
             $data['featured_image'] = $this->featuredImageUpload->store('pages', 'public');
+        } elseif ($this->removeFeaturedImage && $this->editingPage->featured_image) {
+            Storage::disk('public')->delete($this->editingPage->featured_image);
+            $data['featured_image'] = null;
         }
 
-        if ($this->editingPage === null) {
-            Page::create($data);
-        } else {
-            $this->editingPage->update($data);
-        }
+        $this->editingPage->update($data);
 
         Flux::toast(variant: 'success', text: 'Page saved.');
         Flux::modal('page-form')->close();
-
-        $this->resetForm();
-    }
-
-    private function resetForm(): void
-    {
-        $this->editingPage = null;
-        $this->reset('title', 'excerpt', 'content', 'isPublished', 'featuredImageUpload');
-    }
-
-    public function delete(int $pageId): void
-    {
-        $page = Page::query()->findOrFail($pageId);
-
-        if ($page->featured_image) {
-            Storage::disk('public')->delete($page->featured_image);
-        }
-
-        $title = $page->title;
-
-        $page->delete();
-
-        Flux::toast(variant: 'success', text: "\"{$title}\" was deleted.");
     }
 
     #[Computed]
@@ -129,13 +109,9 @@ new #[Title('Halaman')] class extends Component
 }; ?>
 
 <div class="w-full space-y-6">
-    <div class="flex items-start justify-between gap-4">
-        <div>
-            <flux:heading size="xl">Pages</flux:heading>
-            <flux:subheading>Manage published and draft pages.</flux:subheading>
-        </div>
-
-        <flux:button variant="primary" icon="plus" wire:click="create">New page</flux:button>
+    <div>
+        <flux:heading size="xl">Pages</flux:heading>
+        <flux:subheading>Edit the content of the site's built-in pages.</flux:subheading>
     </div>
 
     <flux:input wire:model.live.debounce.300ms="search" placeholder="Search by title" icon="magnifying-glass" class="max-w-sm" />
@@ -172,32 +148,7 @@ new #[Title('Halaman')] class extends Component
                         </flux:table.cell>
                         <flux:table.cell class="whitespace-nowrap">{{ $page->updated_at->diffForHumans() }}</flux:table.cell>
                         <flux:table.cell class="py-0">
-                            <div class="flex items-center gap-2">
-                                <flux:button type="button" variant="outline" size="sm" icon="pencil" wire:click="edit({{ $page->id }})" />
-
-                                <flux:modal.trigger name="delete-page-{{ $page->id }}">
-                                    <flux:button type="button" variant="danger" size="sm" icon="trash" />
-                                </flux:modal.trigger>
-
-                                <flux:modal name="delete-page-{{ $page->id }}" class="max-w-md" focusable>
-                                    <div class="space-y-6">
-                                        <div>
-                                            <flux:heading size="lg">Delete "{{ $page->title }}"?</flux:heading>
-                                            <flux:subheading>This permanently removes the page. This cannot be undone.</flux:subheading>
-                                        </div>
-
-                                        <div class="flex justify-end gap-2">
-                                            <flux:modal.close>
-                                                <flux:button variant="filled">Cancel</flux:button>
-                                            </flux:modal.close>
-
-                                            <flux:button variant="danger" wire:click="delete({{ $page->id }})">
-                                                Delete
-                                            </flux:button>
-                                        </div>
-                                    </div>
-                                </flux:modal>
-                            </div>
+                            <flux:button type="button" variant="outline" size="sm" icon="pencil" wire:click="edit({{ $page->id }})" />
                         </flux:table.cell>
                     </flux:table.row>
                 @endforeach
@@ -207,7 +158,7 @@ new #[Title('Halaman')] class extends Component
 
     <flux:modal flyout name="page-form" class="w-3xl" focusable>
         <form wire:submit="save" class="space-y-6">
-            <flux:heading size="lg">{{ $editingPage ? 'Edit page' : 'Create page' }}</flux:heading>
+            <flux:heading size="lg">Edit page</flux:heading>
 
             <flux:input wire:model="title" label="Title" />
 
@@ -217,15 +168,21 @@ new #[Title('Halaman')] class extends Component
 
             <div class="space-y-3">
                 <flux:heading size="sm">Featured image</flux:heading>
-                @if ($editingPage?->featured_image)
+
+                @if ($editingPage?->featured_image && ! $removeFeaturedImage && ! $featuredImageUpload)
                     <div class="flex items-center gap-4">
                         <img src="{{ Storage::disk('public')->url($editingPage->featured_image) }}" class="h-20 w-32 rounded-lg object-cover" alt="">
-                        <flux:button type="button" variant="danger" size="sm" wire:click="removeFeaturedImage">Remove</flux:button>
+                        <flux:button type="button" variant="danger" size="sm" wire:click="clearFeaturedImage">Remove</flux:button>
                     </div>
                 @endif
-                <flux:input type="file" wire:model="featuredImageUpload" label="{{ $editingPage?->featured_image ? 'Replace image' : 'Upload image' }}" accept="image/*" />
+
+                <flux:input type="file" wire:model="featuredImageUpload" label="{{ $editingPage?->featured_image && ! $removeFeaturedImage ? 'Replace image' : 'Upload image' }}" accept="image/*" />
+
                 @if ($featuredImageUpload)
-                    <img src="{{ $featuredImageUpload->temporaryUrl() }}" class="h-20 w-32 rounded-lg object-cover" alt="">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ $featuredImageUpload->temporaryUrl() }}" class="h-20 w-32 rounded-lg object-cover" alt="">
+                        <flux:button type="button" variant="danger" size="sm" wire:click="clearFeaturedImage">Remove</flux:button>
+                    </div>
                 @endif
             </div>
 

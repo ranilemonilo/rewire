@@ -27,6 +27,9 @@
                 </flux:sidebar.item>
 
                 <flux:sidebar.group heading="Content Management" class="grid">
+                    <flux:sidebar.item icon="document-text" :href="route('content-management.pages')" :current="request()->routeIs('content-management.pages')" wire:navigate>
+                        Pages
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="newspaper" :href="route('content-management.blogs')" :current="request()->routeIs('content-management.blogs')" wire:navigate>
                         Blogs
                     </flux:sidebar.item>
