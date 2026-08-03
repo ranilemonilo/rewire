@@ -7,6 +7,20 @@ use Livewire\Component;
 
 new #[Title('Settings')] class extends Component
 {
+    public string $companyName = '';
+
+    public string $companyTagline = '';
+
+    public string $companyVision = '';
+
+    public string $companyMission = '';
+
+    public string $companyYearsExperience = '';
+
+    public string $companyTotalClients = '';
+
+    public string $companyTotalProjects = '';
+
     public string $seoDescription = '';
 
     public string $analyticsId = '';
@@ -27,6 +41,14 @@ new #[Title('Settings')] class extends Component
 
     public function mount(): void
     {
+        $this->companyName = Setting::get('company_name', '') ?? '';
+        $this->companyTagline = Setting::get('company_tagline', '') ?? '';
+        $this->companyVision = Setting::get('company_vision', '') ?? '';
+        $this->companyMission = Setting::get('company_mission', '') ?? '';
+        $this->companyYearsExperience = Setting::get('company_years_experience', '') ?? '';
+        $this->companyTotalClients = Setting::get('company_total_clients', '') ?? '';
+        $this->companyTotalProjects = Setting::get('company_total_projects', '') ?? '';
+
         $this->seoDescription = Setting::get('seo_description', '') ?? '';
         $this->analyticsId = Setting::get('analytics_id', '') ?? '';
         $this->socialLinkedin = Setting::get('social_linkedin', '') ?? '';
@@ -41,6 +63,13 @@ new #[Title('Settings')] class extends Component
     public function save(): void
     {
         $this->validate([
+            'companyName' => ['required', 'string', 'max:255'],
+            'companyTagline' => ['nullable', 'string', 'max:255'],
+            'companyVision' => ['nullable', 'string'],
+            'companyMission' => ['nullable', 'string'],
+            'companyYearsExperience' => ['nullable', 'integer', 'min:0'],
+            'companyTotalClients' => ['nullable', 'integer', 'min:0'],
+            'companyTotalProjects' => ['nullable', 'integer', 'min:0'],
             'seoDescription' => ['nullable', 'string', 'max:255'],
             'analyticsId' => ['nullable', 'string', 'max:64'],
             'socialLinkedin' => ['nullable', 'url', 'max:255'],
@@ -51,6 +80,14 @@ new #[Title('Settings')] class extends Component
             'contactEmail' => ['nullable', 'email', 'max:255'],
             'contactPhone' => ['nullable', 'string', 'max:64'],
         ]);
+
+        Setting::put('company_name', $this->companyName);
+        Setting::put('company_tagline', $this->companyTagline);
+        Setting::put('company_vision', $this->companyVision);
+        Setting::put('company_mission', $this->companyMission);
+        Setting::put('company_years_experience', $this->companyYearsExperience);
+        Setting::put('company_total_clients', $this->companyTotalClients);
+        Setting::put('company_total_projects', $this->companyTotalProjects);
 
         Setting::put('seo_description', $this->seoDescription);
         Setting::put('analytics_id', $this->analyticsId);
@@ -74,6 +111,28 @@ new #[Title('Settings')] class extends Component
     </div>
 
     <form wire:submit="save" class="space-y-6">
+        <flux:card class="space-y-4">
+            <div>
+                <flux:heading size="lg">Company profile</flux:heading>
+                <flux:subheading>Used across the public site's home, about, and footer sections.</flux:subheading>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <flux:input wire:model="companyName" label="Company name" placeholder="PT. Reka Mitra Teknologi" />
+                <flux:input wire:model="companyTagline" label="Tagline" placeholder="Mitra teknologi tepercaya untuk pertumbuhan bisnis Anda" />
+            </div>
+
+            <flux:textarea wire:model="companyVision" label="Vision" rows="3" />
+
+            <flux:textarea wire:model="companyMission" label="Mission" rows="3" />
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <flux:input type="number" wire:model="companyYearsExperience" label="Years of experience" />
+                <flux:input type="number" wire:model="companyTotalClients" label="Total clients" />
+                <flux:input type="number" wire:model="companyTotalProjects" label="Total projects" />
+            </div>
+        </flux:card>
+
         <flux:card class="space-y-4">
             <div>
                 <flux:heading size="lg">SEO &amp; analytics</flux:heading>

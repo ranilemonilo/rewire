@@ -56,6 +56,13 @@ class Setting extends Model
     private static function label(string $key): string
     {
         return match ($key) {
+            'company_name' => 'Company name',
+            'company_tagline' => 'Company tagline',
+            'company_vision' => 'Company vision',
+            'company_mission' => 'Company mission',
+            'company_years_experience' => 'Years of experience',
+            'company_total_clients' => 'Total clients',
+            'company_total_projects' => 'Total projects',
             'seo_description' => 'SEO meta description',
             'analytics_id' => 'Google Analytics measurement ID',
             'social_linkedin' => 'LinkedIn URL',
