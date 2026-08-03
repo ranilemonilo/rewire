@@ -1,8 +1,4 @@
-@php
-    $contactAddress = \App\Models\Setting::get('contact_address');
-    $contactEmail = \App\Models\Setting::get('contact_email');
-    $contactPhone = \App\Models\Setting::get('contact_phone');
-@endphp
+@props(['contactAddress' => null, 'contactEmail' => null, 'contactPhone' => null])
 
 <section id="contact" class="scroll-mt-24 bg-brand-snow py-24">
     <div class="landing-reveal relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-brand-navy px-6 py-16 sm:px-12 lg:px-16">

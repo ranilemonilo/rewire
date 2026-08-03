@@ -1,4 +1,6 @@
 @php
+    // No CMS source: there's no case-study/portfolio model, so these stay
+    // hardcoded.
     $items = [
         [
             'category' => 'Internal tool',

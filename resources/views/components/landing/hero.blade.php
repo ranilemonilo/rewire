@@ -1,4 +1,7 @@
 @php
+    // No CMS source: the headline, badge, buttons, mini-stats, and illustration
+    // are all fixed marketing copy with no matching column (Setting/Page have
+    // no "hero headline" or "hero stat" fields), so they stay hardcoded here.
     $stats = [
         ['value' => '15', 'suffix' => '+', 'label' => 'Reusable modules'],
         ['value' => '2', 'suffix' => '', 'label' => 'Roles built in'],

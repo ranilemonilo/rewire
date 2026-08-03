@@ -2,6 +2,9 @@
     'title' => null,
     'seoDescription' => null,
     'analyticsId' => null,
+    'companyName' => null,
+    'companyTagline' => null,
+    'socialLinks' => null,
 ])
 
 <!DOCTYPE html>
@@ -29,7 +32,11 @@
 
         {{ $slot }}
 
-        <x-landing.footer />
+        <x-landing.footer
+            :company-name="$companyName"
+            :company-tagline="$companyTagline"
+            :social-links="$socialLinks ?? collect()"
+        />
 
         @fluxScripts
     </body>

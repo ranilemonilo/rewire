@@ -1,4 +1,12 @@
 @php
+    // No CMS source: Setting does have company_years_experience,
+    // company_total_clients, and company_total_projects, but they don't match
+    // these labels/sublabels ("less boilerplate", "roles ready", "test
+    // coverage", "to first deploy" describe the starter kit, not company
+    // achievements). Wiring the numbers in without rewriting the copy would
+    // produce mismatched value/label pairs, and rewriting the copy is a
+    // content decision outside this refactor's scope -- so this stays
+    // hardcoded as one unit.
     $items = [
         ['value' => '90', 'suffix' => '%', 'label' => 'Less boilerplate', 'sublabel' => 'per new project'],
         ['value' => '2', 'suffix' => '', 'label' => 'Roles ready', 'sublabel' => 'admin & member'],

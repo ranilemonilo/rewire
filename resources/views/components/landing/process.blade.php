@@ -1,4 +1,11 @@
+@props(['aboutPage' => null])
+
 @php
+    // The "steps" list and their mini stats above are a fixed 4-step workflow
+    // description with no matching CMS table (no "steps" model), so they stay
+    // hardcoded. Only the section heading and intro paragraph are CMS-driven,
+    // from the first published Page record (falls back to the original copy
+    // when no Page has been created yet in /content-management/pages).
     $stats = [
         ['value' => '4', 'label' => 'Steps'],
         ['value' => '1', 'label' => 'Codebase'],
@@ -19,10 +26,10 @@
                     How it works
                 </span>
                 <h2 class="mt-4 font-display text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
-                    From clone to client-ready
+                    {{ $aboutPage->title ?? 'From clone to client-ready' }}
                 </h2>
                 <p class="mt-4 text-base text-brand-navy/70">
-                    A predictable path from starter kit to a project you can hand off.
+                    {{ $aboutPage->excerpt ?? 'A predictable path from starter kit to a project you can hand off.' }}
                 </p>
 
                 <div class="mt-10 flex flex-wrap gap-8">

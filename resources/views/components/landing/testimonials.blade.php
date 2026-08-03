@@ -1,4 +1,5 @@
 @php
+    // No CMS source: there's no testimonial model, so these stay hardcoded.
     $items = [
         ['quote' => 'This starter kit saved us weeks of setup on our last three client projects.', 'name' => 'Jane Doe', 'role' => 'Founder, Acme Inc', 'rating' => 5],
         ['quote' => 'Handing the blog over to the client was painless — they publish posts themselves now.', 'name' => 'John Smith', 'role' => 'Lead Developer', 'rating' => 5],

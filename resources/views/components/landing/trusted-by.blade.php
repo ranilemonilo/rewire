@@ -1,4 +1,6 @@
 @php
+    // No CMS source: there's no "trusted by" / client-logo model, so this
+    // stays hardcoded.
     $logos = ['Laravel', 'Livewire', 'Flux UI', 'Pest', 'Tailwind', 'Spatie'];
 @endphp
 

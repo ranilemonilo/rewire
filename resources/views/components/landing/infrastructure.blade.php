@@ -1,4 +1,7 @@
 @php
+    // No CMS source: this section describes the tech stack and infra metrics
+    // of the codebase itself, not the company -- there's no model for it, so
+    // it stays hardcoded.
     $regions = [
         ['name' => 'Backend', 'cities' => 'Laravel 13 · Fortify · Spatie Permission'],
         ['name' => 'Frontend', 'cities' => 'Livewire 4 · Flux UI · Tailwind v4'],

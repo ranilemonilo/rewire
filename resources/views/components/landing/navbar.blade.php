@@ -1,3 +1,10 @@
+{{--
+    Brand text stays hardcoded ("Rewire" / "Starter Kit") rather than
+    Setting::get('company_name'): it's a compact two-line stacked mark sized
+    for a short kit name, and a long real company name would overflow or
+    wrap here. The footer's roomier single-line layout uses the CMS company
+    name instead -- see footer.blade.php.
+--}}
 <nav
     x-data="{ open: false, scrolled: false }"
     x-on:scroll.window="scrolled = window.scrollY > 20"
