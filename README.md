@@ -1,45 +1,117 @@
-# Rewire Starter Kit
+# Company Profile CMS – PT. Reka Mitra Teknologi
 
-A reusable Laravel starter kit for internal and client projects — authentication, roles, a blog, and a back office ready to go, so every new engagement starts from a working foundation instead of a blank repo.
+Repository ini dikembangkan berdasarkan [Rewire Starter Kit](https://github.com/Recodex-ID/rewire). Starter kit sudah menyediakan fondasi aplikasi seperti autentikasi, role & permission, layout admin, serta struktur Livewire.
 
-## Stack
+Pada tugas ini (branch `assignment-rani`) saya mengembangkan starter kit tersebut menjadi CMS Company Profile, mulai dari pengelolaan konten (pages, services, gallery, blog) hingga pengaturan perusahaan dan halaman publik yang terhubung ke database.
+
+## Fitur yang sudah tersedia dari Starter Kit
+
+- Authentication (Login, Register, Reset Password) — Fortify
+- Role & Permission (Spatie Permission)
+- Dashboard Admin
+- Layout Admin menggunakan Flux UI
+- Blog CMS dasar
+- Activity Log (Spatie Activitylog)
+- Sitemap generator (Spatie Sitemap)
+- Testing dengan Pest
+
+## Pengembangan yang saya lakukan
+
+### 1. Content Management
+
+Modul CMS baru sehingga konten website dapat dikelola tanpa hardcode.
+
+**Pages**
+- CRUD halaman (mis. About)
+- Publish / Draft
+- SEO slug otomatis
+- Rich text content
+
+**Services**
+- CRUD layanan
+- Ordering
+- Status aktif/nonaktif
+- Ditampilkan di landing page
+
+**Gallery**
+- CRUD gallery
+- Upload gambar & caption
+- Ordering
+- Ditampilkan pada landing page (6 item terbaru)
+
+**Blog**
+- Publish/Draft dengan kolom `published_at`
+- Slug otomatis
+- Penyempurnaan form & test CRUD
+
+### 2. Company Settings
+
+Menambahkan field profil perusahaan pada halaman Settings admin, sehingga bisa diubah tanpa mengubah kode:
+
+- Company name, tagline, vision, mission
+- Years of experience, total clients, total projects
+- Contact (address, email, phone)
+- Social media (LinkedIn, Twitter, GitHub, Instagram)
+- SEO description & Google Analytics ID
+
+### 3. User Management
+
+Menyatukan form create/edit user menjadi satu komponen (unified form) dan memperbaiki alur pengelolaan user beserta cakupan test-nya.
+
+### 4. Activity Log
+
+Menyempurnakan halaman Activity Log:
+- Search
+- Kolom subject & event
+- Log name
+- Penambahan test coverage
+
+### 5. Sitemap
+
+Menambahkan halaman **admin sitemap** (`/admin/sitemap`):
+- Melihat seluruh URL publik yang terdaftar
+- Menampilkan jumlah URL
+- Link menuju `sitemap.xml`
+- Hanya artikel/halaman yang published yang muncul
+
+### 6. Halaman Publik
+
+Menghubungkan landing page (`MainController`) ke data CMS di atas, sehingga konten berasal dari database, bukan hardcode:
+
+- Hero, About (dari Page pertama yang published)
+- Services (dari Service aktif, terurut)
+- Gallery (6 item terbaru)
+- Blog (list & detail)
+- Footer (company name, tagline, social links)
+- Contact (address, email, phone dari Settings)
+
+### 7. Testing
+
+Menambahkan/menyempurnakan Feature Test (Pest) untuk:
+- Page, Service, Gallery, Blog management
+- Settings edit
+- User management
+- Activity log
+- Sitemap page
+- Landing page
+
+## Teknologi
 
 | | |
 |---|---|
 | PHP | 8.4 |
 | Laravel | 13 |
-| Auth | Fortify (login, registration, password reset — no 2FA/passkeys) |
 | Frontend | Livewire 4 + Flux UI |
 | Styling | Tailwind CSS v4 |
 | Roles | Spatie Permission |
-| Quality | Pest 4, Pint, Larastan |
+| Activity Log | Spatie Activitylog |
+| Sitemap | Spatie Sitemap |
+| Slug | Spatie Sluggable |
+| Testing | Pest 4 |
 
-## Features
-
-- **Authentication** — login, registration, password reset out of the box.
-- **Roles & permissions** — every new user gets `member` automatically; `admin` unlocks a gated back office.
-- **Blog** — the one piece of public content that's editable without a redeploy: title, excerpt, body, featured image, publish toggle, auto-generated slugs that never change on edit.
-- **Admin panel** — user management (list, create, change role, delete), an audit trail of admin actions, a sitemap viewer, and site settings (SEO description, Google Analytics, social links, contact info).
-- **Branded system pages** — error pages (404, 500, ...) and transactional emails match the app's look, not the framework defaults.
-- **Dashboard** — real usage stats, not placeholder data.
-- **In-app docs** — a `/docs` page inside the app with project-specific setup and architecture notes.
-- **Tests from day one** — Pest feature tests, Pint formatting, and Larastan static analysis wired into CI.
-
-## Getting started
-
-Uses SQLite by default — no separate database server to set up first.
-
-Starting a brand new project, via the [Laravel installer](https://packagist.org/packages/recodex-id/rewire):
+## Menjalankan project
 
 ```bash
-laravel new my-app --using=recodex-id/rewire
-```
-
-Or clone it directly:
-
-```bash
-git clone https://github.com/Recodex-ID/rewire.git
-cd rewire
 composer install
 npm install
 cp .env.example .env
@@ -50,36 +122,15 @@ php artisan migrate --seed
 composer run dev
 ```
 
-Visit `http://localhost:8000`. `composer run dev` runs the app server, queue listener, and Vite together.
-
-### Default accounts
-
-Seeded by `database/seeders/DatabaseSeeder.php`, password `password` for both:
+Akun default (password `password`):
 
 | Email | Role |
 |---|---|
 | `admin@mail.test` | admin |
 | `member@mail.test` | member |
 
-## Quality checks
+## Menjalankan test
 
 ```bash
 php artisan test --compact
-vendor/bin/pint --dirty
-vendor/bin/phpstan analyse
 ```
-
-Or `composer test`, which runs formatting, static analysis, and the full suite together — the same thing CI runs on every push.
-
-## Reusing this for a new project
-
-1. Update `APP_NAME` and other `.env` values for the new project.
-2. Swap the brand palette in `resources/css/app.css` (`--color-brand-*`) and the logo mark in `public/images/logo.png`.
-3. Replace the seeded accounts (`database/seeders/UserSeeder.php`) and the landing page copy, which is hardcoded directly in `resources/views/components/landing/*`.
-4. Update `composer.json`'s `name`/`description` if the repo is being renamed too.
-
-More detail — architecture notes, where each feature lives, how to extend the landing page — is in the in-app docs at `/docs` once you're logged in.
-
-## License
-
-MIT.
