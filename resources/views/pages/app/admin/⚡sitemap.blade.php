@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\GalleryItem;
+use App\Models\Page;
 use App\Models\Post;
+use App\Models\Service;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,7 +17,7 @@ new #[Title('Sitemap')] class extends Component
     public function entries(): array
     {
         $entries = [
-            ['label' => 'Home', 'url' => route('home'), 'type' => 'Page', 'lastModified' => null],
+            ['label' => 'Home', 'url' => route('home'), 'type' => 'Page', 'lastModified' => $this->homeLastModified()],
             ['label' => 'Blog index', 'url' => route('blogs'), 'type' => 'Page', 'lastModified' => null],
         ];
 
@@ -29,6 +32,24 @@ new #[Title('Sitemap')] class extends Component
 
         return $entries;
     }
+
+    /**
+     * The homepage renders the latest published Page ("about"), active Services, and
+     * Gallery items -- none of which have their own public URL (see MainController::index()
+     * and the sitemap.xml generator, which deliberately omit them for the same reason).
+     * So instead of fabricating URLs for content that isn't independently addressable,
+     * "Home"'s lastModified reflects the most recent update among everything it renders.
+     */
+    private function homeLastModified(): ?\Illuminate\Support\Carbon
+{
+    $latest = collect([
+        Page::query()->published()->latest('updated_at')->value('updated_at'),
+        Service::query()->active()->latest('updated_at')->value('updated_at'),
+        GalleryItem::query()->latest('updated_at')->value('updated_at'),
+    ])->filter()->max();
+
+    return $latest ? \Illuminate\Support\Carbon::parse($latest) : null;
+}
 }; ?>
 
 <div class="w-full space-y-6">
