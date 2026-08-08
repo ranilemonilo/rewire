@@ -1,6 +1,8 @@
 @props(['aboutPage' => null])
 
 @php
+    use App\Models\Setting;
+
     // The "steps" list and their mini stats above are a fixed 4-step workflow
     // description with no matching CMS table (no "steps" model), so they stay
     // hardcoded. Only the section heading and intro paragraph are CMS-driven,
@@ -16,6 +18,9 @@
         ['number' => '03', 'title' => 'Build what is unique', 'description' => 'Add the features that make this client project different from the last one.', 'duration' => 'Varies'],
         ['number' => '04', 'title' => 'Ship it', 'description' => 'Deploy with the same auth, roles, and tests already in place.', 'duration' => '~1 day'],
     ];
+
+    $companyVision = Setting::get('company_vision');
+    $companyMission = Setting::get('company_mission');
 @endphp
 
 <section id="about" class="scroll-mt-24 bg-brand-snow py-24">
@@ -44,6 +49,32 @@
                         </div>
                     @endforeach
                 </div>
+
+                @if ($companyVision || $companyMission)
+                    <div class="mt-10 space-y-6 border-t border-brand-navy/10 pt-8">
+                        @if ($companyVision)
+                            <div>
+                                <h3 class="font-display text-sm font-bold uppercase tracking-widest text-brand-accent">
+                                    Vision
+                                </h3>
+                                <p class="mt-2 text-sm text-brand-navy/70">
+                                    {{ $companyVision }}
+                                </p>
+                            </div>
+                        @endif
+
+                        @if ($companyMission)
+                            <div>
+                                <h3 class="font-display text-sm font-bold uppercase tracking-widest text-brand-accent">
+                                    Mission
+                                </h3>
+                                <p class="mt-2 text-sm text-brand-navy/70">
+                                    {{ $companyMission }}
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <div class="landing-reveal landing-reveal-delay-2 lg:col-span-7">
