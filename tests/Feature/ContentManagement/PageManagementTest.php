@@ -8,10 +8,44 @@ use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 
-test('any verified member can access the pages list', function () {
-    $user = User::factory()->create();
+test('member cannot access the pages list', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
 
-    $this->actingAs($user)->get(route('content-management.pages'))->assertOk();
+    $this->actingAs($member)->get(route('content-management.pages'))->assertForbidden();
+});
+
+test('guest is redirected away from the pages list', function () {
+    $this->get(route('content-management.pages'))->assertRedirect(route('login'));
+});
+
+test('member cannot edit a page even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $page = Page::create(['title' => 'Tentang Kami', 'content' => 'Body.']);
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.pages')
+        ->call('edit', $page->id)
+        ->assertForbidden();
+});
+
+test('member cannot save a page even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $page = Page::create(['title' => 'Tentang Kami', 'content' => 'Body.']);
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.pages')
+        ->set('title', 'Hacked title')
+        ->call('save')
+        ->assertForbidden();
+
+    expect($page->fresh()->title)->toBe('Tentang Kami');
 });
 
 test('admin can view the pages list', function () {
@@ -73,7 +107,6 @@ test('admin can edit a page', function () {
     expect($page->excerpt)->toBe('New excerpt.');
     expect($page->content)->toBe('New content.');
     expect($page->is_published)->toBeTrue();
-    // The slug was already generated on create and must never move when the title changes.
     expect($page->slug)->toBe('tentang-kami');
 });
 
@@ -110,6 +143,25 @@ test('admin can upload a featured image while editing a page', function () {
         ->assertHasNoErrors();
 
     Storage::disk('public')->assertExists($page->fresh()->featured_image);
+});
+
+test('uploading an svg as featured image is rejected', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $page = Page::create(['title' => 'Tentang Kami', 'content' => 'Body.']);
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.content-management.pages')
+        ->call('edit', $page->id)
+        ->set('featuredImageUpload', UploadedFile::fake()->create('malicious.svg', 10, 'image/svg+xml'))
+        ->call('save')
+        ->assertHasErrors(['featuredImageUpload' => 'mimes']);
+
+    expect($page->fresh()->featured_image)->toBeNull();
 });
 
 test('clicking remove on a persisted featured image does not touch storage until save', function () {
