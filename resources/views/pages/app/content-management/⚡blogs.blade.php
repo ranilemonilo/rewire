@@ -52,6 +52,8 @@ new #[Title('Blog')] class extends Component
 
     public function create(): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $this->resetForm();
 
         Flux::modal('post-form')->show();
@@ -59,6 +61,8 @@ new #[Title('Blog')] class extends Component
 
     public function edit(int $postId): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+        
         $post = Post::query()->findOrFail($postId);
 
         $this->editingPost = $post;
@@ -92,6 +96,8 @@ new #[Title('Blog')] class extends Component
 
     public function save(): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('posts', 'slug')->ignore($this->editingPost?->id)],
@@ -149,6 +155,8 @@ new #[Title('Blog')] class extends Component
 
     public function delete(int $postId): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $post = Post::query()->findOrFail($postId);
 
         if ($post->featured_image) {
