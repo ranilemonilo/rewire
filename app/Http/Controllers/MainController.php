@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,30 +17,32 @@ use App\Models\GalleryItem;
 
 class MainController extends Controller
 {
-    public function index(): View
-    {
-        return view('pages.main.index', [...$this->footerData(),
-            'seoDescription' => Setting::get(SettingKey::SeoDescription),
-            'analyticsId' => Setting::get(SettingKey::AnalyticsId),
-           'services' => Service::query()
-    ->active()
-    ->ordered()
-    ->get(),
-
-'gallery' => GalleryItem::query()
-    ->ordered()
-    ->take(6)
-    ->get(),
-
-'aboutPage' => Page::query()
-    ->published()
-    ->oldest()
-    ->first(),
-            'contactAddress' => Setting::get(SettingKey::ContactAddress),
-            'contactEmail' => Setting::get(SettingKey::ContactEmail),
-            'contactPhone' => Setting::get(SettingKey::ContactPhone),
-        ]);
-    }
+  public function index(): View
+{
+    return view('pages.main.index', [...$this->footerData(),
+        'seoDescription' => Setting::get(SettingKey::SeoDescription),
+        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+        'services' => Service::hydrate(Cache::remember(
+            'homepage.services',
+            now()->addMinutes(10),
+            fn () => Service::query()->active()->ordered()->get()->toArray()
+        )),
+        'gallery' => GalleryItem::hydrate(Cache::remember(
+            'homepage.gallery',
+            now()->addMinutes(10),
+            fn () => GalleryItem::query()->ordered()->take(6)->get()->toArray()
+        )),
+        'aboutPage' => Page::hydrate(Cache::remember(
+            'homepage.about-page',
+            now()->addMinutes(10),
+            fn () => Page::query()->published()->oldest()->get()->toArray()
+        ))->first(),
+        'contactAddress' => Setting::get(SettingKey::ContactAddress),
+        'contactEmail' => Setting::get(SettingKey::ContactEmail),
+        'contactPhone' => Setting::get(SettingKey::ContactPhone),
+    ]);
+}
+    
 
     public function blogs(): View
     {
