@@ -7,10 +7,62 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
-test('any verified member can access the gallery list page', function () {
-    $user = User::factory()->create();
+test('member cannot access the gallery list page', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
 
-    $this->actingAs($user)->get(route('content-management.gallery'))->assertOk();
+    $this->actingAs($member)->get(route('content-management.gallery'))->assertForbidden();
+});
+
+test('guest is redirected away from the gallery list page', function () {
+    $this->get(route('content-management.gallery'))->assertRedirect(route('login'));
+});
+
+test('member cannot create a gallery item even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.gallery')
+        ->call('create')
+        ->assertForbidden();
+});
+
+test('member cannot save a gallery item even via direct component call', function () {
+    Storage::fake('public');
+
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.gallery')
+        ->set('title', 'Hacked')
+        ->set('imageUpload', UploadedFile::fake()->image('photo.jpg'))
+        ->call('save')
+        ->assertForbidden();
+
+    $this->assertDatabaseMissing('gallery_items', ['title' => 'Hacked']);
+});
+
+test('member cannot delete a gallery item even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $item = GalleryItem::create([
+        'title' => 'Protected',
+        'image' => 'gallery/protected.jpg',
+        'order' => 0,
+    ]);
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.gallery')
+        ->call('delete', $item->id)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('gallery_items', ['id' => $item->id]);
 });
 
 test('admin can create a gallery item with an image', function () {
@@ -50,6 +102,24 @@ test('creating a gallery item without an image fails validation', function () {
         ->call('save')
         ->assertHasErrors(['imageUpload' => 'required']);
 });
+
+test('uploading an svg as gallery image is rejected', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.content-management.gallery')
+        ->call('create')
+        ->set('title', 'Malicious')
+        ->set('order', 0)
+        ->set('imageUpload', UploadedFile::fake()->create('malicious.svg', 10, 'image/svg+xml'))
+        ->call('save')
+        ->assertHasErrors('imageUpload');
+
+    $this->assertDatabaseMissing('gallery_items', ['title' => 'Malicious']);
+});
+
 
 test('admin can edit a gallery item without replacing the image', function () {
     $admin = User::factory()->create();
