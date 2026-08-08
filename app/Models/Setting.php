@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SettingKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -18,13 +19,17 @@ class Setting extends Model
 
     protected $fillable = ['key', 'value'];
 
-    public static function get(string $key, ?string $default = null): ?string
+    public static function get(SettingKey|string $key, ?string $default = null): ?string
     {
+        $key = $key instanceof SettingKey ? $key->value : $key;
+
         return self::cached()[$key] ?? $default;
     }
 
-    public static function put(string $key, ?string $value): void
+    public static function put(SettingKey|string $key, ?string $value): void
     {
+        $key = $key instanceof SettingKey ? $key->value : $key;
+
         static::query()->updateOrCreate(['key' => $key], ['value' => $value]);
 
         Cache::forget('settings');
@@ -55,24 +60,6 @@ class Setting extends Model
 
     private static function label(string $key): string
     {
-        return match ($key) {
-            'company_name' => 'Company name',
-            'company_tagline' => 'Company tagline',
-            'company_vision' => 'Company vision',
-            'company_mission' => 'Company mission',
-            'company_years_experience' => 'Years of experience',
-            'company_total_clients' => 'Total clients',
-            'company_total_projects' => 'Total projects',
-            'seo_description' => 'SEO meta description',
-            'analytics_id' => 'Google Analytics measurement ID',
-            'social_linkedin' => 'LinkedIn URL',
-            'social_twitter' => 'Twitter / X URL',
-            'social_github' => 'GitHub URL',
-            'social_instagram' => 'Instagram URL',
-            'contact_address' => 'Contact address',
-            'contact_email' => 'Contact email',
-            'contact_phone' => 'Contact phone',
-            default => "Setting \"{$key}\"",
-        };
+        return SettingKey::tryFrom($key)?->label() ?? "Setting \"{$key}\"";
     }
 }
