@@ -63,17 +63,12 @@ new #[Title('Users')] class extends Component
             'role' => ['required', 'string', Rule::in(Role::query()->pluck('name'))],
         ];
 
-        // On create, a password is mandatory. While editing, the field is optional --
-        // leaving it blank means "don't change it" and skips its rules entirely, rather
-        // than being validated as an empty password.
         if ($this->editingUser === null || $this->password !== '') {
             $rules['password'] = $this->passwordRules();
         }
 
         $this->validate($rules);
 
-        // Guard first, before any writes -- an admin editing their own account must never
-        // end up with the role change half-applied while the profile change went through.
         if ($this->editingUser?->is(Auth::user()) && $this->role !== 'admin') {
             Flux::toast(variant: 'danger', text: 'You cannot remove your own admin role.');
 
@@ -90,7 +85,11 @@ new #[Title('Users')] class extends Component
             $user->forceFill(['email_verified_at' => now()])->save();
             $user->syncRoles([$this->role]);
 
-            activity('users')->performedOn($user)->withProperties(['role' => $this->role])->log("{$user->name} was created with the {$this->role} role");
+            activity('users')
+                ->performedOn($user)
+                ->withProperties(['role' => $this->role])
+                ->event('created')
+                ->log("{$user->name} was created with the {$this->role} role");
 
             Flux::toast(variant: 'success', text: "{$user->name} was created.");
         } else {
@@ -111,15 +110,25 @@ new #[Title('Users')] class extends Component
             $this->editingUser->syncRoles([$this->role]);
 
             if ($profileChanged) {
-                activity('users')->performedOn($this->editingUser)->log("{$this->editingUser->name}'s profile was updated");
+                activity('users')
+                    ->performedOn($this->editingUser)
+                    ->event('profile_updated')
+                    ->log("{$this->editingUser->name}'s profile was updated");
             }
 
             if ($passwordChanged) {
-                activity('users')->performedOn($this->editingUser)->log("{$this->editingUser->name}'s password was reset");
+                activity('users')
+                    ->performedOn($this->editingUser)
+                    ->event('password_reset')
+                    ->log("{$this->editingUser->name}'s password was reset");
             }
 
             if ($roleChanged) {
-                activity('users')->performedOn($this->editingUser)->withProperties(['role' => $this->role])->log("{$this->editingUser->name}'s role was changed to {$this->role}");
+                activity('users')
+                    ->performedOn($this->editingUser)
+                    ->withProperties(['role' => $this->role])
+                    ->event('role_changed')
+                    ->log("{$this->editingUser->name}'s role was changed to {$this->role}");
             }
 
             Flux::toast(variant: 'success', text: "{$this->editingUser->name} was updated.");
@@ -147,7 +156,10 @@ new #[Title('Users')] class extends Component
             return;
         }
 
-        activity('users')->performedOn($user)->log("{$user->name} ({$user->email}) was deleted");
+        activity('users')
+            ->performedOn($user)
+            ->event('deleted')
+            ->log("{$user->name} ({$user->email}) was deleted");
 
         $user->delete();
 

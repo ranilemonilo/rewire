@@ -41,6 +41,7 @@ class LogAuthenticationActivity
         activity('auth')
             ->performedOn($user)
             ->causedBy($user)
+            ->event('registered')
             ->log("{$user->name} registered");
     }
 
@@ -56,6 +57,7 @@ class LogAuthenticationActivity
             ->performedOn($user)
             ->causedBy($user)
             ->withProperties(['guard' => $event->guard])
+            ->event('login')
             ->log("{$user->name} logged in");
     }
 
@@ -70,6 +72,7 @@ class LogAuthenticationActivity
         activity('auth')
             ->performedOn($user)
             ->causedBy($user)
+            ->event('logout')
             ->log("{$user->name} logged out");
     }
 
@@ -77,7 +80,9 @@ class LogAuthenticationActivity
     {
         $email = $this->identifyingField($event->credentials);
 
-        $activity = activity('auth')->withProperties(['email' => $email]);
+        $activity = activity('auth')
+            ->withProperties(['email' => $email])
+            ->event('failed_login');
 
         if ($event->user instanceof User) {
             $activity->performedOn($event->user);
@@ -99,6 +104,7 @@ class LogAuthenticationActivity
         activity('auth')
             ->performedOn($user)
             ->causedBy($user)
+            ->event('password_reset')
             ->log("{$user->name} reset their password");
     }
 
@@ -113,6 +119,7 @@ class LogAuthenticationActivity
         activity('auth')
             ->performedOn($user)
             ->causedBy($user)
+            ->event('verified')
             ->log("{$user->name} verified their email address");
     }
 

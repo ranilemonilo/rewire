@@ -98,7 +98,11 @@ test('creating a user logs activity', function () {
         ->call('save');
 
     expect(Activity::count())->toBe($countBefore + 1);
-    expect(Activity::query()->latest('id')->first()->description)->toContain('was created');
+
+    $activity = Activity::query()->latest('id')->first();
+
+    expect($activity->description)->toContain('was created');
+    expect($activity->event)->toBe('created');
 });
 
 test('creating a user with an already taken email fails validation', function () {
@@ -265,8 +269,8 @@ test('resetting a password logs activity without exposing the password itself', 
     expect($activity->description)->toContain('password was reset');
     expect($activity->description)->not->toContain('new-password');
     expect($activity->attribute_changes)->toBeEmpty();
+    expect($activity->event)->toBe('password_reset');
 });
-
 test('editing a user\'s profile logs activity', function () {
     $admin = User::factory()->create();
     $admin->syncRoles(Role::findOrCreate('admin'));
@@ -283,7 +287,11 @@ test('editing a user\'s profile logs activity', function () {
         ->call('save');
 
     expect(Activity::count())->toBe($countBefore + 1);
-    expect(Activity::query()->latest('id')->first()->description)->toContain('profile was updated');
+
+    $activity = Activity::query()->latest('id')->first();
+
+    expect($activity->description)->toContain('profile was updated');
+    expect($activity->event)->toBe('profile_updated');
 });
 
 test('admin can change another user\'s role', function () {
@@ -368,7 +376,11 @@ test('changing a role logs activity', function () {
         ->call('save');
 
     expect(Activity::count())->toBe($countBefore + 1);
-    expect(Activity::query()->latest('id')->first()->description)->toContain('role was changed');
+
+    $activity = Activity::query()->latest('id')->first();
+
+    expect($activity->description)->toContain('role was changed');
+    expect($activity->event)->toBe('role_changed');
 });
 
 test('admin can delete another user', function () {
@@ -408,5 +420,9 @@ test('deleting a user logs activity', function () {
     Livewire::test('pages::app.admin.users')->call('delete', $member->id);
 
     expect(Activity::count())->toBe($countBefore + 1);
-    expect(Activity::query()->latest('id')->first()->description)->toContain('was deleted');
+
+    $activity = Activity::query()->latest('id')->first();
+
+    expect($activity->description)->toContain('was deleted');
+    expect($activity->event)->toBe('deleted');
 });
