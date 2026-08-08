@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SettingKey;
+use App\Models\GalleryItem;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Service;
@@ -13,55 +14,54 @@ use Illuminate\Support\Facades\Cache;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\GalleryItem;
 
 class MainController extends Controller
 {
-  public function index(): View
-{
-    return view('pages.main.index', [...$this->footerData(),
-        'seoDescription' => Setting::get(SettingKey::SeoDescription),
-        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
-        'services' => Service::hydrate(Cache::remember(
-            'homepage.services',
-            now()->addMinutes(10),
-            fn () => Service::query()->active()->ordered()->get()->toArray()
-        )),
-        'gallery' => GalleryItem::hydrate(Cache::remember(
-            'homepage.gallery',
-            now()->addMinutes(10),
-            fn () => GalleryItem::query()->ordered()->take(6)->get()->toArray()
-        )),
-        'aboutPage' => Page::hydrate(Cache::remember(
-            'homepage.about-page',
-            now()->addMinutes(10),
-            fn () => Page::query()->published()->oldest()->get()->toArray()
-        ))->first(),
-        'contactAddress' => Setting::get(SettingKey::ContactAddress),
-        'contactEmail' => Setting::get(SettingKey::ContactEmail),
-        'contactPhone' => Setting::get(SettingKey::ContactPhone),
-    ]);
-}
-    
+    public function index(): View
+    {
+        return view('pages.main.index', [...$this->footerData(),
+            'seoDescription' => Setting::get(SettingKey::SeoDescription),
+            'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+            'services' => Service::hydrate(Cache::remember(
+                'homepage.services',
+                now()->addMinutes(10),
+                fn () => Service::query()->active()->ordered()->get()->toArray()
+            )),
+            'gallery' => GalleryItem::hydrate(Cache::remember(
+                'homepage.gallery',
+                now()->addMinutes(10),
+                fn () => GalleryItem::query()->ordered()->take(6)->get()->toArray()
+            )),
+            'aboutPage' => Page::hydrate(Cache::remember(
+                'homepage.about-page',
+                now()->addMinutes(10),
+                fn () => Page::query()->published()->oldest()->get()->toArray()
+            ))->first(),
+            'contactAddress' => Setting::get(SettingKey::ContactAddress),
+            'contactEmail' => Setting::get(SettingKey::ContactEmail),
+            'contactPhone' => Setting::get(SettingKey::ContactPhone),
+        ]);
+    }
 
     public function blogs(): View
-{
-    return view('pages.main.blogs', [...$this->footerData(),
-        'seoDescription' => Setting::get(SettingKey::SeoDescription, 'News, guides, and updates from '.(Setting::get(SettingKey::CompanyName) ?? 'us').'.'),
-        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
-        'posts' => Post::query()->published()->with('author')->latest()->paginate(9),
-    ]);
-}
-    public function blogDetail(string $slug): View
-{
-    $post = Post::query()->where('slug', $slug)->published()->with('author')->firstOrFail();
+    {
+        return view('pages.main.blogs', [...$this->footerData(),
+            'seoDescription' => Setting::get(SettingKey::SeoDescription, 'News, guides, and updates from '.(Setting::get(SettingKey::CompanyName) ?? 'us').'.'),
+            'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+            'posts' => Post::query()->published()->with('author')->latest()->paginate(9),
+        ]);
+    }
 
-    return view('pages.main.blog-detail', [...$this->footerData(),
-        'seoDescription' => $post->excerpt ?? Setting::get(SettingKey::SeoDescription),
-        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
-        'post' => $post,
-    ]);
-}
+    public function blogDetail(string $slug): View
+    {
+        $post = Post::query()->where('slug', $slug)->published()->with('author')->firstOrFail();
+
+        return view('pages.main.blog-detail', [...$this->footerData(),
+            'seoDescription' => $post->excerpt ?? Setting::get(SettingKey::SeoDescription),
+            'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+            'post' => $post,
+        ]);
+    }
 
     /**
      * Shared data for the site chrome (footer) rendered on every public page
