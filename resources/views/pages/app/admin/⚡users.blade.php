@@ -168,32 +168,33 @@ new #[Title('Users')] class extends Component
         $this->role = 'member';
     }
 
-    public function delete(int $userId): void
-    {
-        $user = User::query()->findOrFail($userId);
+   public function delete(int $userId): void
+{
+    $user = User::query()->findOrFail($userId);
 
-        if ($user->is(Auth::user())) {
-            Flux::toast(variant: 'danger', text: 'You cannot delete your own account.');
+    if ($user->is(Auth::user())) {
+        Flux::toast(variant: 'danger', text: 'You cannot delete your own account.');
 
-            return;
-        }
-
-        if ($user->hasRole('admin') && $this->isLastAdmin($user)) {
-            Flux::toast(variant: 'danger', text: 'Cannot delete the last remaining admin.');
-
-            return;
-        }
-
-        activity('users')
-            ->performedOn($user)
-            ->event('deleted')
-            ->log("{$user->name} ({$user->email}) was deleted");
-
-        $user->delete();
-
-        Flux::toast(variant: 'success', text: "{$user->name} was deleted.");
+        return;
     }
 
+    if ($user->hasRole('admin') && $this->isLastAdmin($user)) {
+        Flux::toast(variant: 'danger', text: 'Cannot delete the last remaining admin.');
+
+        return;
+    }
+
+    $name = $user->name;
+
+    $user->delete();
+
+    activity('users')
+        ->performedOn($user)
+        ->event('deleted')
+        ->log("{$name} ({$user->email}) was deleted");
+
+    Flux::toast(variant: 'success', text: "{$name} was deleted.");
+}
     /**
      * Whether $user is the only admin left in the system. Checked before a delete
      * or a role change away from admin, so the system can never end up with zero
