@@ -32,6 +32,7 @@ new #[Title('Gallery')] class extends Component
 
     public function create(): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
         $this->resetForm();
 
         Flux::modal('gallery-form')->show();
@@ -39,6 +40,7 @@ new #[Title('Gallery')] class extends Component
 
     public function edit(int $galleryItemId): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
         $galleryItem = GalleryItem::query()->findOrFail($galleryItemId);
 
         $this->editingGalleryItem = $galleryItem;
@@ -60,6 +62,8 @@ new #[Title('Gallery')] class extends Component
 
     public function save(): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $this->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'caption' => ['nullable', 'string', 'max:255'],
@@ -101,6 +105,8 @@ new #[Title('Gallery')] class extends Component
 
     public function delete(int $galleryItemId): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+        
         $galleryItem = GalleryItem::query()->findOrFail($galleryItemId);
 
         Storage::disk('public')->delete($galleryItem->image);
