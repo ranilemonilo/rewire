@@ -1,6 +1,7 @@
 @props(['aboutPage' => null])
 
 @php
+    use App\Enums\SettingKey;
     use App\Models\Setting;
 
     // The "steps" list and their mini stats above are a fixed 4-step workflow
@@ -19,8 +20,8 @@
         ['number' => '04', 'title' => 'Ship it', 'description' => 'Deploy with the same auth, roles, and tests already in place.', 'duration' => '~1 day'],
     ];
 
-    $companyVision = Setting::get('company_vision');
-    $companyMission = Setting::get('company_mission');
+    $companyVision = Setting::get(SettingKey::CompanyVision);
+    $companyMission = Setting::get(SettingKey::CompanyMission);
 @endphp
 
 <section id="about" class="scroll-mt-24 bg-brand-snow py-24">

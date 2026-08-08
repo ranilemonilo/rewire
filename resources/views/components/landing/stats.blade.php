@@ -1,10 +1,11 @@
 @php
+    use App\Enums\SettingKey;
     use App\Models\Setting;
 
     $items = [
-        ['value' => Setting::get('company_years_experience', '0'), 'suffix' => '+', 'label' => 'Years of experience', 'sublabel' => 'building software'],
-        ['value' => Setting::get('company_total_clients', '0'), 'suffix' => '+', 'label' => 'Happy clients', 'sublabel' => 'served to date'],
-        ['value' => Setting::get('company_total_projects', '0'), 'suffix' => '+', 'label' => 'Projects delivered', 'sublabel' => 'completed successfully'],
+        ['value' => Setting::get(SettingKey::CompanyYearsExperience, '0'), 'suffix' => '+', 'label' => 'Years of experience', 'sublabel' => 'building software'],
+        ['value' => Setting::get(SettingKey::CompanyTotalClients, '0'), 'suffix' => '+', 'label' => 'Happy clients', 'sublabel' => 'served to date'],
+        ['value' => Setting::get(SettingKey::CompanyTotalProjects, '0'), 'suffix' => '+', 'label' => 'Projects delivered', 'sublabel' => 'completed successfully'],
     ];
 @endphp
 

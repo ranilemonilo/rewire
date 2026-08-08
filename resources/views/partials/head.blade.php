@@ -1,7 +1,8 @@
 @php
+    use App\Enums\SettingKey;
     use App\Models\Setting;
 
-    $siteName = Setting::get('company_name', 'Rewire Starter Kit');
+     $siteName = Setting::get(SettingKey::CompanyName, 'Rewire Starter Kit');
 @endphp
 
 <meta charset="utf-8" />
