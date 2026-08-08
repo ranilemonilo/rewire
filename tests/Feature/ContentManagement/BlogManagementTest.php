@@ -8,10 +8,58 @@ use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 
-test('any verified member can access the blog list page', function () {
-    $user = User::factory()->create();
+test('member cannot access the blog list page', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
 
-    $this->actingAs($user)->get(route('content-management.blogs'))->assertOk();
+    $this->actingAs($member)->get(route('content-management.blogs'))->assertForbidden();
+});
+
+test('guest is redirected away from the blog list page', function () {
+    $this->get(route('content-management.blogs'))->assertRedirect(route('login'));
+});
+
+test('member cannot create a post even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.blogs')
+        ->call('create')
+        ->assertForbidden();
+});
+
+test('member cannot save a post even via direct component call', function () {
+    Storage::fake('public');
+
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.blogs')
+        ->set('title', 'Hacked Post')
+        ->set('featuredImageUpload', UploadedFile::fake()->image('post.jpg'))
+        ->call('save')
+        ->assertForbidden();
+
+    $this->assertDatabaseMissing('posts', ['title' => 'Hacked Post']);
+});
+
+test('member cannot delete a post even via direct component call', function () {
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $post = Post::factory()->create();
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.content-management.blogs')
+        ->call('delete', $post->id)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('posts', ['id' => $post->id]);
 });
 
 test('admin can view the blog list', function () {
@@ -62,6 +110,23 @@ test('creating a post without a featured image fails validation', function () {
         ->set('body', 'Body.')
         ->call('save')
         ->assertHasErrors(['featuredImageUpload' => 'required']);
+});
+
+test('uploading an svg as featured image is rejected', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.content-management.blogs')
+        ->call('create')
+        ->set('title', 'Malicious Post')
+        ->set('body', 'Body.')
+        ->set('featuredImageUpload', UploadedFile::fake()->create('malicious.svg', 10, 'image/svg+xml'))
+        ->call('save')
+        ->assertHasErrors('featuredImageUpload');
+
+    $this->assertDatabaseMissing('posts', ['title' => 'Malicious Post']);
 });
 
 test('admin can edit an existing post without touching its featured image', function () {
