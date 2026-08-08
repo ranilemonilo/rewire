@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\AuthorizesContentManagement;
 use App\Models\Service;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
@@ -9,7 +10,7 @@ use Livewire\WithPagination;
 
 new #[Title('Services')] class extends Component
 {
-    use WithPagination;
+    use AuthorizesContentManagement, WithPagination;
 
     public string $search = '';
 
@@ -32,7 +33,8 @@ new #[Title('Services')] class extends Component
 
     public function create(): void
     {
-         abort_unless(auth()->user()->hasRole('admin'), 403);
+         $this->authorizeContentManagement();
+
         $this->resetForm();
 
         Flux::modal('service-form')->show();
@@ -40,7 +42,7 @@ new #[Title('Services')] class extends Component
 
     public function edit(int $serviceId): void
     {
-         abort_unless(auth()->user()->hasRole('admin'), 403);
+         $this->authorizeContentManagement();
 
         $service = Service::query()->findOrFail($serviceId);
 
@@ -56,7 +58,7 @@ new #[Title('Services')] class extends Component
 
     public function save(): void
     {
-         abort_unless(auth()->user()->hasRole('admin'), 403);
+         $this->authorizeContentManagement();
 
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -93,7 +95,7 @@ new #[Title('Services')] class extends Component
 
     public function delete(int $serviceId): void
     {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
+        $this->authorizeContentManagement();
 
         $service = Service::query()->findOrFail($serviceId);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\AuthorizesContentManagement;
 use App\Models\Post;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +15,7 @@ use Livewire\WithPagination;
 
 new #[Title('Blog')] class extends Component
 {
-    use WithFileUploads, WithPagination;
+    use AuthorizesContentManagement, WithFileUploads, WithPagination;
 
     public string $search = '';
 
@@ -52,7 +53,7 @@ new #[Title('Blog')] class extends Component
 
     public function create(): void
     {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
+        $this->authorizeContentManagement();
 
         $this->resetForm();
 
@@ -61,7 +62,7 @@ new #[Title('Blog')] class extends Component
 
     public function edit(int $postId): void
     {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
+        $this->authorizeContentManagement();
         
         $post = Post::query()->findOrFail($postId);
 
@@ -96,14 +97,14 @@ new #[Title('Blog')] class extends Component
 
     public function save(): void
     {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
+        $this->authorizeContentManagement();
 
-        $this->validate([
+       $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('posts', 'slug')->ignore($this->editingPost?->id)],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'body' => ['required', 'string'],
-            'featuredImageUpload' => [$this->editingPost === null ? 'required' : 'nullable', 'image', 'max:2048'],
+            'featuredImageUpload' => [$this->editingPost === null ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'publishedAt' => ['nullable', 'date'],
         ]);
 
@@ -155,7 +156,7 @@ new #[Title('Blog')] class extends Component
 
     public function delete(int $postId): void
     {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
+        $this->authorizeContentManagement();
 
         $post = Post::query()->findOrFail($postId);
 

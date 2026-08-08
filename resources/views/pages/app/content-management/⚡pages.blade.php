@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\AuthorizesContentManagement;
 use App\Models\Page;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,9 @@ use Livewire\WithPagination;
 
 new #[Title('Pages')] class extends Component
 {
-    use WithFileUploads, WithPagination;
+    use AuthorizesContentManagement, WithFileUploads, WithPagination;
+
+
 
     public string $search = '';
 
@@ -42,7 +45,7 @@ new #[Title('Pages')] class extends Component
 
    public function edit(int $pageId): void
 {
-    abort_unless(auth()->user()->hasRole('admin'), 403);
+    $this->authorizeContentManagement();
 
     $page = Page::query()->findOrFail($pageId);
 
@@ -75,7 +78,8 @@ new #[Title('Pages')] class extends Component
 
   public function save(): void
 {
-    abort_unless(auth()->user()->hasRole('admin'), 403);
+    $this->authorizeContentManagement();
+
 
     $this->validate([
         'title' => ['required', 'string', 'max:255'],
