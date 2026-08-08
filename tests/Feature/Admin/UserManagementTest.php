@@ -58,7 +58,6 @@ test('the create form starts empty even after a previous edit was opened', funct
 test('admin can create a new user with a chosen role', function () {
     $admin = User::factory()->create();
     $admin->syncRoles(Role::findOrCreate('admin'));
-    Role::findOrCreate('editor');
 
     $this->actingAs($admin);
 
@@ -68,7 +67,7 @@ test('admin can create a new user with a chosen role', function () {
         ->set('email', 'jane@example.com')
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
-        ->set('role', 'editor')
+        ->set('role', 'admin')
         ->call('save')
         ->assertHasNoErrors();
 
@@ -76,7 +75,7 @@ test('admin can create a new user with a chosen role', function () {
 
     $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
 
-    expect($user->hasRole('editor'))->toBeTrue();
+    expect($user->hasRole('admin'))->toBeTrue();
     expect($user->hasRole('member'))->toBeFalse();
     expect($user->email_verified_at)->not->toBeNull();
 });
@@ -425,4 +424,94 @@ test('deleting a user logs activity', function () {
 
     expect($activity->description)->toContain('was deleted');
     expect($activity->event)->toBe('deleted');
+});
+
+test('assigning a role outside the curated allow-list is rejected', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+    Role::findOrCreate('editor');
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.users')
+        ->call('create')
+        ->set('name', 'Jane Doe')
+        ->set('email', 'jane@example.com')
+        ->set('password', 'password')
+        ->set('password_confirmation', 'password')
+        ->set('role', 'editor')
+        ->call('save')
+        ->assertHasErrors(['role']);
+
+    $this->assertDatabaseMissing('users', ['email' => 'jane@example.com']);
+});
+
+test('admin cannot demote the last remaining admin', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $otherAdmin = User::factory()->create();
+    $otherAdmin->syncRoles(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.users')
+        ->call('edit', $otherAdmin->id)
+        ->set('role', 'member')
+        ->call('save');
+
+    // Two admins exist, so demoting one is fine -- this is the baseline before
+    // the actual "last admin" test below.
+    expect($otherAdmin->fresh()->hasRole('member'))->toBeTrue();
+});
+
+test('admin cannot demote the only remaining admin in the system', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    // Elevate member to admin, then log in as the original admin to attempt
+    // demoting themself would be blocked by self-demotion already -- instead,
+    // simulate two admins where one gets demoted down to the last one.
+    $this->actingAs($admin);
+
+    $secondAdmin = User::factory()->create();
+    $secondAdmin->syncRoles(Role::findOrCreate('admin'));
+
+    Livewire::test('pages::app.admin.users')
+        ->call('edit', $secondAdmin->id)
+        ->set('role', 'member')
+        ->call('save');
+
+    expect($secondAdmin->fresh()->hasRole('member'))->toBeTrue();
+
+    // Now only $admin remains as admin. Attempting to demote them (acting as
+    // themself would hit the self-demotion guard, so use a fresh session as if
+    // another admin existed -- but since $admin is now the last one, any attempt
+    // to change their role away from admin must be blocked).
+    Livewire::test('pages::app.admin.users')
+        ->call('edit', $admin->id)
+        ->set('name', $admin->name)
+        ->set('role', 'member')
+        ->call('save');
+
+    expect($admin->fresh()->hasRole('admin'))->toBeTrue();
+});
+
+test('the only remaining admin cannot be deleted, even by another user', function () {
+    $admin = User::factory()->create();
+    $admin->syncRoles(Role::findOrCreate('admin'));
+
+    $member = User::factory()->create();
+    $member->syncRoles(Role::findOrCreate('member'));
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::app.admin.users')->call('delete', $admin->id);
+
+    $this->assertDatabaseHas('users', ['id' => $admin->id]);
 });

@@ -22,7 +22,6 @@ test('admin can view the activity log page', function () {
 test('creating a user logs activity with the acting admin as causer', function () {
     $admin = User::factory()->create();
     $admin->syncRoles(Role::findOrCreate('admin'));
-    Role::findOrCreate('editor');
 
     $this->actingAs($admin);
 
@@ -32,7 +31,7 @@ test('creating a user logs activity with the acting admin as causer', function (
         ->set('email', 'jane@example.com')
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
-        ->set('role', 'editor')
+        ->set('role', 'member')
         ->call('save')
         ->assertHasNoErrors();
 

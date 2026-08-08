@@ -15,6 +15,14 @@ new #[Title('Users')] class extends Component
 {
     use PasswordValidationRules, WithPagination;
 
+    /**
+     * Roles that can be assigned through this UI. Deliberately a curated allow-list
+     * rather than Role::query()->pluck('name') -- pulling straight from the roles
+     * table would let anyone create a role record (e.g. via tinker, a seeder bug,
+     * or a future feature) and have it immediately assignable here without review.
+     */
+    private const ASSIGNABLE_ROLES = ['admin', 'member'];
+
     public string $search = '';
 
     public ?User $editingUser = null;
@@ -60,7 +68,7 @@ new #[Title('Users')] class extends Component
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->editingUser?->id)],
-            'role' => ['required', 'string', Rule::in(Role::query()->pluck('name'))],
+            'role' => ['required', 'string', Rule::in(self::ASSIGNABLE_ROLES)],
         ];
 
         if ($this->editingUser === null || $this->password !== '') {
@@ -71,6 +79,20 @@ new #[Title('Users')] class extends Component
 
         if ($this->editingUser?->is(Auth::user()) && $this->role !== 'admin') {
             Flux::toast(variant: 'danger', text: 'You cannot remove your own admin role.');
+
+            return;
+        }
+
+        // System-wide guard: block demoting the last remaining admin, even by
+        // another admin. Self-demotion is already caught above; this covers the
+        // remaining path where Admin A changes Admin B's (the last admin's) role.
+        if (
+            $this->editingUser
+            && $this->editingUser->hasRole('admin')
+            && $this->role !== 'admin'
+            && $this->isLastAdmin($this->editingUser)
+        ) {
+            Flux::toast(variant: 'danger', text: 'Cannot remove the role of the last remaining admin.');
 
             return;
         }
@@ -156,6 +178,12 @@ new #[Title('Users')] class extends Component
             return;
         }
 
+        if ($user->hasRole('admin') && $this->isLastAdmin($user)) {
+            Flux::toast(variant: 'danger', text: 'Cannot delete the last remaining admin.');
+
+            return;
+        }
+
         activity('users')
             ->performedOn($user)
             ->event('deleted')
@@ -167,12 +195,23 @@ new #[Title('Users')] class extends Component
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, string>
+     * Whether $user is the only admin left in the system. Checked before a delete
+     * or a role change away from admin, so the system can never end up with zero
+     * admins and become unrecoverable without direct database access.
+     */
+    private function isLastAdmin(User $user): bool
+    {
+        return $user->hasRole('admin')
+            && User::role('admin')->count() === 1;
+    }
+
+    /**
+     * @return array<int, string>
      */
     #[Computed]
     public function roles()
     {
-        return Role::query()->pluck('name');
+        return self::ASSIGNABLE_ROLES;
     }
 
     #[Computed]
