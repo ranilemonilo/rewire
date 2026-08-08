@@ -1,5 +1,7 @@
 <x-layouts::main
     :title="$post->title"
+    :seo-description="$seoDescription"
+    :analytics-id="$analyticsId"
     :company-name="$companyName"
     :company-tagline="$companyTagline"
     :social-links="$socialLinks"

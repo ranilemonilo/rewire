@@ -45,20 +45,23 @@ class MainController extends Controller
     
 
     public function blogs(): View
-    {
-        return view('pages.main.blogs', [...$this->footerData(),
-            'posts' => Post::query()->published()->with('author')->latest()->paginate(9),
-        ]);
-    }
-
+{
+    return view('pages.main.blogs', [...$this->footerData(),
+        'seoDescription' => Setting::get(SettingKey::SeoDescription, 'News, guides, and updates from '.(Setting::get(SettingKey::CompanyName) ?? 'us').'.'),
+        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+        'posts' => Post::query()->published()->with('author')->latest()->paginate(9),
+    ]);
+}
     public function blogDetail(string $slug): View
-    {
-        $post = Post::query()->where('slug', $slug)->published()->with('author')->firstOrFail();
+{
+    $post = Post::query()->where('slug', $slug)->published()->with('author')->firstOrFail();
 
-        return view('pages.main.blog-detail', [...$this->footerData(),
-            'post' => $post,
-        ]);
-    }
+    return view('pages.main.blog-detail', [...$this->footerData(),
+        'seoDescription' => $post->excerpt ?? Setting::get(SettingKey::SeoDescription),
+        'analyticsId' => Setting::get(SettingKey::AnalyticsId),
+        'post' => $post,
+    ]);
+}
 
     /**
      * Shared data for the site chrome (footer) rendered on every public page
