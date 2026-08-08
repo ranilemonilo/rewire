@@ -59,16 +59,22 @@
                                 <p class="mt-1 font-medium text-brand-snow">{{ $contactEmail }}</p>
                             </div>
                         </div>
-
-                        <div class="flex items-start gap-4">
-                            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-accent/10">
-                                <x-landing.icon name="phone" class="size-5 text-brand-accent" />
-                            </span>
-                            <div>
-                                <p class="text-sm text-brand-snow/60">Phone</p>
-                                <p class="mt-1 font-medium text-brand-snow">{{ $contactPhone }}</p>
-                            </div>
-                        </div>
+<div class="flex items-start gap-4">
+    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-accent/10">
+        <x-landing.icon name="phone" class="size-5 text-brand-accent" />
+    </span>
+    <div>
+        <p class="text-sm text-brand-snow/60">Phone</p>
+        @if ($contactPhone)
+            <a href="tel:{{ preg_replace('/[^\d+]/', '', $contactPhone) }}" class="mt-1 block font-medium text-brand-snow transition hover:text-brand-accent">
+                {{ $contactPhone }}
+            </a>
+        @else
+            <p class="mt-1 font-medium text-brand-snow">{{ $contactPhone }}</p>
+        @endif
+    </div>
+</div>
+                      
                     </div>
                 </div>
             </div>
