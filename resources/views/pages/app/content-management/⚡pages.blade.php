@@ -9,6 +9,12 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
+/**
+ * Manages the site's built-in pages (e.g. About, Contact).
+ * Pages are a fixed set referenced by slug elsewhere in the app —
+ * intentionally no create()/delete() here to avoid breaking those references.
+ */
+
 new #[Title('Pages')] class extends Component
 {
     use WithFileUploads, WithPagination;
@@ -34,20 +40,22 @@ new #[Title('Pages')] class extends Component
         $this->resetPage();
     }
 
-    public function edit(int $pageId): void
-    {
-        $page = Page::query()->findOrFail($pageId);
+   public function edit(int $pageId): void
+{
+    abort_unless(auth()->user()->hasRole('admin'), 403);
 
-        $this->editingPage = $page;
-        $this->title = $page->title;
-        $this->excerpt = $page->excerpt ?? '';
-        $this->content = $page->content;
-        $this->isPublished = $page->is_published;
-        $this->featuredImageUpload = null;
-        $this->removeFeaturedImage = false;
+    $page = Page::query()->findOrFail($pageId);
 
-        Flux::modal('page-form')->show();
-    }
+    $this->editingPage = $page;
+    $this->title = $page->title;
+    $this->excerpt = $page->excerpt ?? '';
+    $this->content = $page->content;
+    $this->isPublished = $page->is_published;
+    $this->featuredImageUpload = null;
+    $this->removeFeaturedImage = false;
+
+    Flux::modal('page-form')->show();
+}
 
     /**
      * Cancels a not-yet-saved upload if one is staged, otherwise marks the persisted
@@ -65,38 +73,40 @@ new #[Title('Pages')] class extends Component
         $this->removeFeaturedImage = true;
     }
 
-    public function save(): void
-    {
-        $this->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'excerpt' => ['nullable', 'string', 'max:500'],
-            'content' => ['required', 'string'],
-            'featuredImageUpload' => ['nullable', 'image', 'max:2048'],
-        ]);
+  public function save(): void
+{
+    abort_unless(auth()->user()->hasRole('admin'), 403);
 
-        $data = [
-            'title' => $this->title,
-            'excerpt' => $this->excerpt ?: null,
-            'content' => $this->content,
-            'is_published' => $this->isPublished,
-        ];
+    $this->validate([
+        'title' => ['required', 'string', 'max:255'],
+        'excerpt' => ['nullable', 'string', 'max:500'],
+        'content' => ['required', 'string'],
+        'featuredImageUpload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+    ]);
 
-        if ($this->featuredImageUpload) {
-            if ($this->editingPage->featured_image) {
-                Storage::disk('public')->delete($this->editingPage->featured_image);
-            }
+    $data = [
+        'title' => $this->title,
+        'excerpt' => $this->excerpt ?: null,
+        'content' => $this->content,
+        'is_published' => $this->isPublished,
+    ];
 
-            $data['featured_image'] = $this->featuredImageUpload->store('pages', 'public');
-        } elseif ($this->removeFeaturedImage && $this->editingPage->featured_image) {
+    if ($this->featuredImageUpload) {
+        if ($this->editingPage->featured_image) {
             Storage::disk('public')->delete($this->editingPage->featured_image);
-            $data['featured_image'] = null;
         }
 
-        $this->editingPage->update($data);
-
-        Flux::toast(variant: 'success', text: 'Page saved.');
-        Flux::modal('page-form')->close();
+        $data['featured_image'] = $this->featuredImageUpload->store('pages', 'public');
+    } elseif ($this->removeFeaturedImage && $this->editingPage->featured_image) {
+        Storage::disk('public')->delete($this->editingPage->featured_image);
+        $data['featured_image'] = null;
     }
+
+    $this->editingPage->update($data);
+
+    Flux::toast(variant: 'success', text: 'Page saved.');
+    Flux::modal('page-form')->close();
+}
 
     #[Computed]
     public function pages()
