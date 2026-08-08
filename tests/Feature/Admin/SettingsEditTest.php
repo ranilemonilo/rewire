@@ -88,3 +88,68 @@ test('editing the company name logs activity with a human-friendly label', funct
     expect($activity)->not->toBeNull();
     expect($activity->description)->toBe('Company name was created');
 });
+test('admin can save contact details', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.settings')
+        ->set('companyName', 'PT. Reka Mitra Teknologi')
+        ->set('contactAddress', 'Jakarta, Indonesia')
+        ->set('contactEmail', 'hello@recodex.id')
+        ->set('contactPhone', '+62 21 0000 0000')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Setting::get('contact_address'))->toBe('Jakarta, Indonesia');
+    expect(Setting::get('contact_email'))->toBe('hello@recodex.id');
+    expect(Setting::get('contact_phone'))->toBe('+62 21 0000 0000');
+});
+
+test('admin can save all four social links', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.settings')
+        ->set('companyName', 'PT. Reka Mitra Teknologi')
+        ->set('socialLinkedin', 'https://linkedin.com/company/recodex')
+        ->set('socialTwitter', 'https://x.com/recodex')
+        ->set('socialGithub', 'https://github.com/recodex')
+        ->set('socialInstagram', 'https://instagram.com/recodex')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Setting::get('social_linkedin'))->toBe('https://linkedin.com/company/recodex');
+    expect(Setting::get('social_twitter'))->toBe('https://x.com/recodex');
+    expect(Setting::get('social_github'))->toBe('https://github.com/recodex');
+    expect(Setting::get('social_instagram'))->toBe('https://instagram.com/recodex');
+});
+
+test('an invalid social link URL fails validation', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.settings')
+        ->set('companyName', 'PT. Reka Mitra Teknologi')
+        ->set('socialLinkedin', 'not-a-valid-url')
+        ->call('save')
+        ->assertHasErrors(['socialLinkedin' => 'url']);
+});
+
+test('an invalid contact email fails validation', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::findOrCreate('admin'));
+
+    $this->actingAs($admin);
+
+    Livewire::test('pages::app.admin.settings')
+        ->set('companyName', 'PT. Reka Mitra Teknologi')
+        ->set('contactEmail', 'not-an-email')
+        ->call('save')
+        ->assertHasErrors(['contactEmail' => 'email']);
+});
