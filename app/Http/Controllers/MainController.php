@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SettingKey;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Service;
 use App\Models\Setting;
-use App\Models\GalleryItem;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\GalleryItem;
 
 class MainController extends Controller
 {
     public function index(): View
     {
         return view('pages.main.index', [...$this->footerData(),
-            'seoDescription' => Setting::get('seo_description'),
-            'analyticsId' => Setting::get('analytics_id'),
+            'seoDescription' => Setting::get(SettingKey::SeoDescription),
+            'analyticsId' => Setting::get(SettingKey::AnalyticsId),
            'services' => Service::query()
     ->active()
     ->ordered()
@@ -34,9 +35,9 @@ class MainController extends Controller
     ->published()
     ->oldest()
     ->first(),
-            'contactAddress' => Setting::get('contact_address'),
-            'contactEmail' => Setting::get('contact_email'),
-            'contactPhone' => Setting::get('contact_phone'),
+            'contactAddress' => Setting::get(SettingKey::ContactAddress),
+            'contactEmail' => Setting::get(SettingKey::ContactEmail),
+            'contactPhone' => Setting::get(SettingKey::ContactPhone),
         ]);
     }
 
@@ -66,13 +67,13 @@ class MainController extends Controller
     private function footerData(): array
     {
         return [
-            'companyName' => Setting::get('company_name'),
-            'companyTagline' => Setting::get('company_tagline'),
+            'companyName' => Setting::get(SettingKey::CompanyName),
+            'companyTagline' => Setting::get(SettingKey::CompanyTagline),
             'socialLinks' => collect([
-                'linkedin' => Setting::get('social_linkedin'),
-                'twitter' => Setting::get('social_twitter'),
-                'github' => Setting::get('social_github'),
-                'instagram' => Setting::get('social_instagram'),
+                'linkedin' => Setting::get(SettingKey::SocialLinkedin),
+                'twitter' => Setting::get(SettingKey::SocialTwitter),
+                'github' => Setting::get(SettingKey::SocialGithub),
+                'instagram' => Setting::get(SettingKey::SocialInstagram),
             ])->filter(),
         ];
     }

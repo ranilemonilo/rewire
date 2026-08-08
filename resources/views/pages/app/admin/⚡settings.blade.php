@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SettingKey;
 use App\Models\Setting;
 use Flux\Flux;
 use Livewire\Attributes\Title;
@@ -41,23 +42,23 @@ new #[Title('Settings')] class extends Component
 
     public function mount(): void
     {
-        $this->companyName = Setting::get('company_name', '') ?? '';
-        $this->companyTagline = Setting::get('company_tagline', '') ?? '';
-        $this->companyVision = Setting::get('company_vision', '') ?? '';
-        $this->companyMission = Setting::get('company_mission', '') ?? '';
-        $this->companyYearsExperience = Setting::get('company_years_experience', '') ?? '';
-        $this->companyTotalClients = Setting::get('company_total_clients', '') ?? '';
-        $this->companyTotalProjects = Setting::get('company_total_projects', '') ?? '';
+        $this->companyName = Setting::get(SettingKey::CompanyName, '') ?? '';
+        $this->companyTagline = Setting::get(SettingKey::CompanyTagline, '') ?? '';
+        $this->companyVision = Setting::get(SettingKey::CompanyVision, '') ?? '';
+        $this->companyMission = Setting::get(SettingKey::CompanyMission, '') ?? '';
+        $this->companyYearsExperience = Setting::get(SettingKey::CompanyYearsExperience, '') ?? '';
+        $this->companyTotalClients = Setting::get(SettingKey::CompanyTotalClients, '') ?? '';
+        $this->companyTotalProjects = Setting::get(SettingKey::CompanyTotalProjects, '') ?? '';
 
-        $this->seoDescription = Setting::get('seo_description', '') ?? '';
-        $this->analyticsId = Setting::get('analytics_id', '') ?? '';
-        $this->socialLinkedin = Setting::get('social_linkedin', '') ?? '';
-        $this->socialTwitter = Setting::get('social_twitter', '') ?? '';
-        $this->socialGithub = Setting::get('social_github', '') ?? '';
-        $this->socialInstagram = Setting::get('social_instagram', '') ?? '';
-        $this->contactAddress = Setting::get('contact_address', '') ?? '';
-        $this->contactEmail = Setting::get('contact_email', '') ?? '';
-        $this->contactPhone = Setting::get('contact_phone', '') ?? '';
+        $this->seoDescription = Setting::get(SettingKey::SeoDescription, '') ?? '';
+        $this->analyticsId = Setting::get(SettingKey::AnalyticsId, '') ?? '';
+        $this->socialLinkedin = Setting::get(SettingKey::SocialLinkedin, '') ?? '';
+        $this->socialTwitter = Setting::get(SettingKey::SocialTwitter, '') ?? '';
+        $this->socialGithub = Setting::get(SettingKey::SocialGithub, '') ?? '';
+        $this->socialInstagram = Setting::get(SettingKey::SocialInstagram, '') ?? '';
+        $this->contactAddress = Setting::get(SettingKey::ContactAddress, '') ?? '';
+        $this->contactEmail = Setting::get(SettingKey::ContactEmail, '') ?? '';
+        $this->contactPhone = Setting::get(SettingKey::ContactPhone, '') ?? '';
     }
 
     public function save(): void
@@ -81,23 +82,23 @@ new #[Title('Settings')] class extends Component
             'contactPhone' => ['nullable', 'string', 'max:64'],
         ]);
 
-        Setting::put('company_name', $this->companyName);
-        Setting::put('company_tagline', $this->companyTagline);
-        Setting::put('company_vision', $this->companyVision);
-        Setting::put('company_mission', $this->companyMission);
-        Setting::put('company_years_experience', $this->companyYearsExperience);
-        Setting::put('company_total_clients', $this->companyTotalClients);
-        Setting::put('company_total_projects', $this->companyTotalProjects);
+        Setting::put(SettingKey::CompanyName, $this->companyName);
+        Setting::put(SettingKey::CompanyTagline, $this->companyTagline);
+        Setting::put(SettingKey::CompanyVision, $this->companyVision);
+        Setting::put(SettingKey::CompanyMission, $this->companyMission);
+        Setting::put(SettingKey::CompanyYearsExperience, $this->companyYearsExperience);
+        Setting::put(SettingKey::CompanyTotalClients, $this->companyTotalClients);
+        Setting::put(SettingKey::CompanyTotalProjects, $this->companyTotalProjects);
 
-        Setting::put('seo_description', $this->seoDescription);
-        Setting::put('analytics_id', $this->analyticsId);
-        Setting::put('social_linkedin', $this->socialLinkedin);
-        Setting::put('social_twitter', $this->socialTwitter);
-        Setting::put('social_github', $this->socialGithub);
-        Setting::put('social_instagram', $this->socialInstagram);
-        Setting::put('contact_address', $this->contactAddress);
-        Setting::put('contact_email', $this->contactEmail);
-        Setting::put('contact_phone', $this->contactPhone);
+        Setting::put(SettingKey::SeoDescription, $this->seoDescription);
+        Setting::put(SettingKey::AnalyticsId, $this->analyticsId);
+        Setting::put(SettingKey::SocialLinkedin, $this->socialLinkedin);
+        Setting::put(SettingKey::SocialTwitter, $this->socialTwitter);
+        Setting::put(SettingKey::SocialGithub, $this->socialGithub);
+        Setting::put(SettingKey::SocialInstagram, $this->socialInstagram);
+        Setting::put(SettingKey::ContactAddress, $this->contactAddress);
+        Setting::put(SettingKey::ContactEmail, $this->contactEmail);
+        Setting::put(SettingKey::ContactPhone, $this->contactPhone);
 
         Flux::toast(variant: 'success', text: 'Settings updated.');
     }
