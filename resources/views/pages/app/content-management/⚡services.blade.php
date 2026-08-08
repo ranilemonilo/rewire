@@ -32,6 +32,7 @@ new #[Title('Services')] class extends Component
 
     public function create(): void
     {
+         abort_unless(auth()->user()->hasRole('admin'), 403);
         $this->resetForm();
 
         Flux::modal('service-form')->show();
@@ -39,6 +40,8 @@ new #[Title('Services')] class extends Component
 
     public function edit(int $serviceId): void
     {
+         abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $service = Service::query()->findOrFail($serviceId);
 
         $this->editingService = $service;
@@ -53,6 +56,8 @@ new #[Title('Services')] class extends Component
 
     public function save(): void
     {
+         abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'icon' => ['required', 'string', 'max:64'],
@@ -88,6 +93,8 @@ new #[Title('Services')] class extends Component
 
     public function delete(int $serviceId): void
     {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
         $service = Service::query()->findOrFail($serviceId);
 
         $title = $service->title;
