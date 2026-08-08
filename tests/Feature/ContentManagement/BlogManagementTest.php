@@ -157,7 +157,8 @@ test('admin can delete a post', function () {
 
     Livewire::test('pages::app.content-management.blogs')->call('delete', $post->id);
 
-    $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+  $this->assertSoftDeleted('posts', ['id' => $post->id]);
+    expect(Post::find($post->id))->toBeNull();
 });
 
 test('creating a post without a slug generates one from the title', function () {

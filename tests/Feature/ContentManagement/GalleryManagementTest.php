@@ -185,6 +185,7 @@ test('admin can delete a gallery item and its stored image', function () {
 
     Livewire::test('pages::app.content-management.gallery')->call('delete', $item->id);
 
-    $this->assertDatabaseMissing('gallery_items', ['id' => $item->id]);
+    $this->assertSoftDeleted('gallery_items', ['id' => $item->id]);
+    expect(GalleryItem::find($item->id))->toBeNull();
     Storage::disk('public')->assertMissing('gallery/to-delete.jpg');
 });

@@ -6,6 +6,7 @@ use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -22,11 +23,12 @@ use Spatie\Sluggable\SlugOptions;
  * @property bool $is_published
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class Page extends Model
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasSlug, LogsActivity;
+    use HasFactory, HasSlug, LogsActivity, SoftDeletes;
 
     protected $fillable = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'is_published'];
 
@@ -51,9 +53,6 @@ class Page extends Model
 
     public function getSlugOptions(): SlugOptions
     {
-        // Generated from the title on create only -- regenerating on every title edit
-        // would silently change the page's public URL and break existing links, so an
-        // admin who wants to change the slug after creation edits it explicitly instead.
         return SlugOptions::create()
             ->generateSlugsFrom('title')
             ->saveSlugsTo('slug')
@@ -62,10 +61,6 @@ class Page extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        // Deliberately not ->dontLogEmptyChanges(): only is_published is tracked (title/
-        // excerpt/content are excluded to keep entries readable), so most real edits touch
-        // those fields without touching is_published -- logging empty changes is what
-        // keeps those saves from being silently skipped.
         return LogOptions::defaults()
             ->logOnly(['is_published'])
             ->logOnlyDirty()

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -25,11 +26,12 @@ use Spatie\Sluggable\SlugOptions;
  * @property Carbon|null $published_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
-    use HasFactory, HasSlug, LogsActivity;
+    use HasFactory, HasSlug, LogsActivity, SoftDeletes;
 
     protected $fillable = ['author_id', 'title', 'slug', 'excerpt', 'body', 'featured_image', 'is_published', 'published_at'];
 
@@ -63,9 +65,6 @@ class Post extends Model
 
     public function getSlugOptions(): SlugOptions
     {
-        // Generated from the title on create only -- regenerating on every title edit
-        // would silently change the post's public URL and break existing links, so an
-        // admin who wants to change the slug after creation edits it explicitly instead.
         return SlugOptions::create()
             ->generateSlugsFrom('title')
             ->saveSlugsTo('slug')
@@ -74,10 +73,6 @@ class Post extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        // Deliberately not ->dontLogEmptyChanges(): title/slug/published_at/is_published are
-        // tracked (excerpt/body stay excluded to keep entries readable), but a real edit can
-        // still touch only excerpt/body -- logging empty changes is what keeps those saves
-        // from being silently skipped.
         return LogOptions::defaults()
             ->logOnly(['title', 'slug', 'published_at', 'is_published'])
             ->logOnlyDirty()

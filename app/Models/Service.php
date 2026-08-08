@@ -6,6 +6,7 @@ use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -19,11 +20,12 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = ['title', 'icon', 'description', 'order', 'is_active'];
 
@@ -57,10 +59,6 @@ class Service extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        // Deliberately not ->dontLogEmptyChanges(): only is_active is tracked (title/icon/
-        // description are excluded to keep entries readable), so most real edits touch
-        // those fields without touching is_active -- logging empty changes is what keeps
-        // those saves from being silently skipped.
         return LogOptions::defaults()
             ->logOnly(['is_active'])
             ->logOnlyDirty()

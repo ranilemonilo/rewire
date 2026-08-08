@@ -167,7 +167,8 @@ test('admin can delete a service', function () {
 
     Livewire::test('pages::app.content-management.services')->call('delete', $service->id);
 
-    $this->assertDatabaseMissing('services', ['id' => $service->id]);
+   $this->assertSoftDeleted('services', ['id' => $service->id]);
+    expect(Service::find($service->id))->toBeNull();
 });
 
 test('search matches by title', function () {
